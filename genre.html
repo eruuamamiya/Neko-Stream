@@ -52,7 +52,7 @@
 
     <script>
         // Fallback Config
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com/otakudesu/genres"; }
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com/otakudesu/genre"; }
 
         document.addEventListener("DOMContentLoaded", function() {
             // Set Navigasi Aktif
@@ -73,7 +73,7 @@
 
             try {
                 // Fetch ke API STB
-                const req = await fetch(`${API_BASE_URL}/otakudesu/genres`);
+                const req = await fetch(`${API_BASE_URL}/otakudesu/genre`);
                 if(!req.ok) throw new Error("Gagal fetch API");
                 
                 const res = await req.json();
@@ -140,3 +140,4 @@
 </body>
 
 </html>
+
