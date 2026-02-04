@@ -65,7 +65,7 @@
 
     <script>
         // Config Default
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "http://localhost:3000"; }
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com/otakudesu/ongoing"; }
         
         let currentPage = 1;
 
@@ -105,7 +105,7 @@
 
             try {
                 // Fetch API dengan parameter page
-                const req = await fetch(`${API_BASE_URL}/ongoing?p=${page}`);
+                const req = await fetch(`${API_BASE_URL}/otakudesu/ongoing?p=${page}`);
                 if(!req.ok) throw new Error("Gagal fetch");
                 
                 const res = await req.json();
@@ -194,4 +194,5 @@
         }
     </script>
 </body>
+
 </html>
