@@ -73,7 +73,7 @@
     <script>
         // Fallback Config
         if (typeof API_BASE_URL === 'undefined') {
-            var API_BASE_URL = "http://localhost:3000"; 
+            var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com/otakudesu/schedule"; 
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -101,7 +101,7 @@
             const grid = document.getElementById('schedule-grid');
 
             try {
-                const req = await fetch(`${API_BASE_URL}/schedule`);
+                const req = await fetch(`${API_BASE_URL}/otakudesu/schedule`);
                 if(!req.ok) throw new Error("Gagal fetch");
                 
                 const res = await req.json();
@@ -189,3 +189,4 @@
     </script>
 </body>
 </html>
+
