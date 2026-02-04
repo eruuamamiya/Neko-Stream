@@ -11,11 +11,12 @@
 // Ganti URL di bawah ini dengan Link Cloudflare Tunnel kamu yang aktif.
 // Contoh: "https://nama-tunnel-kamu.trycloudflare.com"
 
-const API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com/otakudesu"; 
+const API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com"; 
 
 // (Biarkan baris ini, untuk mencegah error jika variabel belum ada)
 if (typeof API_BASE_URL === 'undefined') {
     console.warn('API_BASE_URL belum diatur di config.js');
 }
+
 
 
