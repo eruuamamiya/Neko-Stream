@@ -162,24 +162,39 @@
             grid.innerHTML = html;
         }
 
-        function updatePagination(meta, page) {
+                function updatePagination(meta, page) {
             currentPage = page;
             
-            // Update Angka Halaman
-            document.getElementById('current-page-num').innerText = currentPage;
-            document.getElementById('total-page-num').innerText = meta.totalPages || '?';
-            document.getElementById('page-indicator').innerText = `Page ${currentPage}`;
+            // Ambil elemen teks di tengah tombol
+            // Pastikan di HTML ada: <span class="text-xs font-bold text-white">Page <span id="current-page-num">1</span> <span id="total-page-container"></span></span>
+            // Atau kita mainkan innerHTML parent-nya saja biar gampang:
+            
+            const paginationContainer = document.querySelector('#pagination span'); 
+            
+            if (meta.totalPages) {
+                // KARENA DATA TOTAL PAGES ADA (65), KITA TAMPILKAN!
+                paginationContainer.innerHTML = `Page <span id="current-page-num">${currentPage}</span> / <span id="total-page-num">${meta.totalPages}</span>`;
+            } else {
+                // Jaga-jaga kalau suatu saat datanya hilang
+                paginationContainer.innerHTML = `Page <span id="current-page-num">${currentPage}</span>`;
+            }
 
-            // Update Status Tombol (Enable/Disable)
             const btnPrev = document.getElementById('btn-prev');
             const btnNext = document.getElementById('btn-next');
 
-            btnPrev.disabled = !meta.hasPrevPage;
-            btnNext.disabled = !meta.hasNextPage;
+            // Logika Tombol (Server kamu kirim hasNextPage: true, jadi ini aman)
+            if (meta.hasPrevPage !== undefined) {
+                btnPrev.disabled = !meta.hasPrevPage;
+                btnNext.disabled = !meta.hasNextPage;
+            } else {
+                btnPrev.disabled = (currentPage === 1);
+                btnNext.disabled = false;
+            }
         }
     </script>
 </body>
 
 </html>
+
 
 
