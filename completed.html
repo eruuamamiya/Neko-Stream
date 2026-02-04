@@ -93,7 +93,7 @@
 
             try {
                 // Fetch API ke Server
-                const req = await fetch(`${API_BASE_URL}/otakudesu/complete?p=${page}`);
+                const req = await fetch(`${API_BASE_URL}/otakudesu/completed?p=${page}`);
                 if(!req.ok) throw new Error("Gagal fetch");
                 
                 const res = await req.json();
@@ -181,3 +181,4 @@
 </body>
 
 </html>
+
