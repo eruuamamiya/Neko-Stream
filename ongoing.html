@@ -105,7 +105,7 @@
 
             try {
                 // Fetch API dengan parameter page
-                const req = await fetch(`${API_BASE_URL}/otakudesu/ongoing?p=${page}`);
+                const req = await fetch(`${API_BASE_URL}/otakudesu/ongoing?page=${page}`);
                 if(!req.ok) throw new Error("Gagal fetch");
                 
                 const res = await req.json();
@@ -196,3 +196,4 @@
 </body>
 
 </html>
+
