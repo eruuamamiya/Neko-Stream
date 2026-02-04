@@ -8,7 +8,6 @@
     <script src="config.js"></script>
     <style>
         body { background-color: #0d1117; color: #e0e0e0; font-family: sans-serif; }
-        .card-font { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         .nav-link { color: #e5e7eb; font-size: 0.875rem; font-weight: 600; transition: color 0.2s; }
         .nav-link:hover { color: #60a5fa; } 
     </style>
@@ -38,7 +37,7 @@
             <p class="text-gray-500 text-xs">Memuat jadwal...</p>
         </div>
 
-        <div id="anime-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 hidden"></div>
+        <div id="anime-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 hidden"></div>
     </main>
 
     <script>
@@ -51,7 +50,6 @@
             const grid = document.getElementById('anime-grid');
             const countLabel = document.getElementById('total-anime-count');
             
-            // Fallback config
             const baseURL = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : "http://localhost:3000";
 
             try {
@@ -59,20 +57,16 @@
                 if(!req.ok) throw new Error("Gagal fetch data");
                 
                 const res = await req.json();
-                
-                // --- BAGIAN PERBAIKAN UTAMA ---
-                // Sesuai screenshot: datanya ada di res.data.scheduleList
                 const daysData = res.data?.scheduleList || [];
                 
                 let allAnime = [];
                 
                 daysData.forEach(dayItem => {
-                    // Sesuai screenshot: Nama hari pakai 'title', bukan 'day'
                     const dayName = dayItem.title || "Unknown"; 
                     const list = dayItem.animeList || [];
                     
                     list.forEach(anime => {
-                        anime.releaseDay = dayName; // Tempel nama hari
+                        anime.releaseDay = dayName; 
                         allAnime.push(anime);
                     });
                 });
@@ -102,28 +96,32 @@
 
             list.forEach(anime => {
                 const id = anime.animeId || anime.id;
-                // Kadang url poster dari API Otakudesu suka http biasa, kita paksa https kalau perlu
-                const poster = anime.poster || 'https://via.placeholder.com/150'; 
                 const day = anime.releaseDay;
 
-                // Warna badge beda-beda biar cantik
+                // Warna badge hari
                 let badgeColor = 'bg-blue-600';
                 if(day === 'Minggu') badgeColor = 'bg-red-600';
                 if(day === 'Jumat') badgeColor = 'bg-green-600';
 
+                // --- MODIFIKASI: HAPUS BAGIAN POSTER ---
+                // Kita ganti jadi kartu text yang simple dan elegan
+                
                 html += `
-                <a href="detail.html?id=${id}" class="relative aspect-[3/4] overflow-hidden bg-gray-800 group shadow-lg rounded-md border border-[#30363d] hover:border-blue-500 transition-colors">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
+                <a href="detail.html?id=${id}" class="group relative flex flex-col bg-[#161b22] border border-[#30363d] p-4 rounded-lg hover:border-blue-500 hover:shadow-lg hover:shadow-blue-900/10 transition-all duration-300">
                     
-                    <div class="absolute top-0 left-0 ${badgeColor} text-white text-[10px] font-bold px-2 py-1 rounded-br-sm shadow-md uppercase z-10">
-                        ${day}
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="${badgeColor} text-white text-[10px] font-bold px-2 py-1 rounded shadow uppercase tracking-wide">
+                            ${day}
+                        </span>
+                        
+                        <svg class="w-4 h-4 text-gray-600 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </div>
 
-                    <div class="absolute bottom-0 w-full bg-black/70 backdrop-blur-[2px] p-2 border-t border-white/5">
-                        <h3 class="text-white text-[11px] font-medium leading-tight line-clamp-2 text-center card-font group-hover:text-blue-400 transition-colors">
-                            ${anime.title}
-                        </h3>
-                    </div>
+                    <h3 class="text-gray-200 text-sm font-semibold leading-relaxed group-hover:text-blue-400 transition-colors line-clamp-2">
+                        ${anime.title}
+                    </h3>
+                    
+                    <div class="absolute -bottom-2 -right-2 w-16 h-16 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-all"></div>
                 </a>`;
             });
             grid.innerHTML = html;
@@ -131,4 +129,3 @@
     </script>
 </body>
 </html>
-
