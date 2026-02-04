@@ -50,7 +50,7 @@
 
     <script>
         // Config Default
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "http://localhost:3000"; }
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com/otakudesu/anime"; }
 
         document.addEventListener("DOMContentLoaded", function() {
             // Set Navigasi Aktif
@@ -72,7 +72,7 @@
 
             try {
                 // Request Data
-                const req = await fetch(`${API_BASE_URL}/anime`);
+                const req = await fetch(`${API_BASE_URL}/otakudesu/anime`);
                 
                 if(!req.ok) throw new Error("Gagal mengambil data");
                 
@@ -169,3 +169,4 @@
     </script>
 </body>
 </html>
+
