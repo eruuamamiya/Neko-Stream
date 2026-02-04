@@ -63,7 +63,7 @@
     </main>
 
     <script>
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "http://localhost:3000"; }
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com/otakudesu/completed"; }
         
         let currentPage = 1;
 
@@ -93,7 +93,7 @@
 
             try {
                 // Fetch API ke Server
-                const req = await fetch(`${API_BASE_URL}/complete?p=${page}`);
+                const req = await fetch(`${API_BASE_URL}/otakudesu/complete?p=${page}`);
                 if(!req.ok) throw new Error("Gagal fetch");
                 
                 const res = await req.json();
@@ -179,4 +179,5 @@
         }
     </script>
 </body>
+
 </html>
