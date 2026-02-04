@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List Anime - NekoStream</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; }
+        html { scroll-behavior: smooth; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0d1117; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+    <header class="bg-[#161b22] border-b border-[#30363d] sticky top-0 z-50 p-4 shadow-lg">
+        <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <nav class="flex flex-wrap justify-center gap-6">
+                <a href="index.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-home">Home</a>
+                <a href="ongoing.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-ongoing">On Going</a>
+                <a href="jadwal.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-jadwal">Jadwal Rilis</a>
+                <a href="list-anime.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-list">List Anime</a>
+                <a href="genre.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-genre">List Genre</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8 pb-20">
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-[#30363d] pb-4">
+            <h1 class="text-2xl font-bold text-white">📜 Daftar Anime Lengkap</h1>
+            <input type="text" id="filterInput" placeholder="Filter judul cepat..." class="bg-[#161b22] border border-[#30363d] text-white text-sm rounded-lg px-4 py-2 w-full md:w-64 focus:border-blue-500 outline-none">
+        </div>
+
+        <div id="loading" class="text-center py-20 text-gray-500">Memuat data...</div>
+        <div id="error-msg" class="hidden text-center py-10 text-red-400">Gagal mengambil data.</div>
+
+        <div id="alpha-nav" class="hidden flex flex-wrap gap-2 mb-8 p-4 bg-[#161b22] rounded-xl border border-[#30363d]"></div>
+
+        <div id="anime-list-container" class="space-y-8 hidden"></div>
+
+    </main>
+
+    <button onclick="window.scrollTo(0,0)" class="fixed bottom-6 right-6 bg-blue-600 p-3 rounded-full text-white shadow-lg hover:bg-blue-700 opacity-80 hover:opacity-100 transition">↑</button>
+
+    <script>
+        // Config Default
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "http://localhost:3000"; }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Set Navigasi Aktif
+            const navItem = document.getElementById('nav-list');
+            if(navItem) {
+                navItem.classList.add('text-blue-500', 'border-b-2', 'border-blue-500');
+                navItem.classList.remove('text-[#e5e7eb]');
+            }
+
+            // Ambil Data
+            fetchList();
+        });
+
+        async function fetchList() {
+            const loading = document.getElementById('loading');
+            const errorMsg = document.getElementById('error-msg');
+            const container = document.getElementById('anime-list-container');
+            const alphaNav = document.getElementById('alpha-nav');
+
+            try {
+                // Request Data
+                const req = await fetch(`${API_BASE_URL}/anime`);
+                
+                if(!req.ok) throw new Error("Gagal mengambil data");
+                
+                const res = await req.json();
+                
+                // Parsing data sesuai JSON kamu: res.data.list
+                const listData = res.data?.list || [];
+
+                if(listData.length === 0) {
+                    container.innerHTML = '<p class="text-center text-gray-500">Data kosong.</p>';
+                } else {
+                    renderAlphabetButtons(listData);
+                    renderList(listData);
+                }
+
+                loading.classList.add('hidden');
+                container.classList.remove('hidden');
+                alphaNav.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                loading.classList.add('hidden');
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        // --- RENDER TOMBOL HURUF (A-Z) ---
+        function renderAlphabetButtons(data) {
+            const nav = document.getElementById('alpha-nav');
+            let html = '';
+            
+            data.forEach(group => {
+                const char = group.startWith;
+                html += `
+                <a href="#group-${char}" class="w-8 h-8 flex items-center justify-center text-xs font-bold bg-[#0d1117] border border-[#30363d] rounded hover:bg-blue-600 hover:text-white hover:border-blue-500 text-gray-400 transition">
+                    ${char}
+                </a>`;
+            });
+            nav.innerHTML = html;
+        }
+
+        // --- RENDER DAFTAR ANIME ---
+        function renderList(data) {
+            const container = document.getElementById('anime-list-container');
+            let html = '';
+
+            data.forEach(group => {
+                const char = group.startWith;
+                const animes = group.animeList || [];
+
+                if(animes.length > 0) {
+                    html += `
+                    <div id="group-${char}" class="group-section scroll-mt-24">
+                        <div class="flex items-center gap-4 mb-3">
+                            <span class="text-2xl font-bold text-blue-500">${char}</span>
+                            <div class="h-px bg-[#30363d] flex-grow"></div>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2">
+                            ${animes.map(anime => `
+                                <a href="detail.html?id=${anime.animeId}" class="anime-item block text-[13px] text-gray-400 hover:text-blue-400 hover:translate-x-1 transition-transform p-1 truncate" title="${anime.title}">
+                                    ${anime.title}
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>`;
+                }
+            });
+            container.innerHTML = html;
+        }
+
+        // --- FILTER PENCARIAN CLIENT-SIDE ---
+        document.getElementById('filterInput').addEventListener('input', function(e) {
+            const keyword = e.target.value.toLowerCase();
+            const sections = document.querySelectorAll('.group-section');
+
+            sections.forEach(section => {
+                const links = section.querySelectorAll('.anime-item');
+                let foundInThisSection = false;
+
+                links.forEach(link => {
+                    if(link.innerText.toLowerCase().includes(keyword)) {
+                        link.style.display = 'block';
+                        foundInThisSection = true;
+                    } else {
+                        link.style.display = 'none';
+                    }
+                });
+
+                // Sembunyikan section huruf jika tidak ada anime yang cocok
+                section.style.display = foundInThisSection ? 'block' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

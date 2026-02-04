@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On Going Anime - NekoStream</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="config.js"></script>
+
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; }
+        
+        /* Transisi Gambar */
+        .anime-card img { transition: transform 0.3s ease; }
+        .anime-card:hover img { transform: scale(1.1); }
+        .anime-card:hover .play-overlay { opacity: 1; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+    <header class="bg-[#161b22] border-b border-[#30363d] sticky top-0 z-50 p-4 shadow-lg">
+        <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <nav class="flex flex-wrap justify-center gap-6">
+                <a href="index.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-home">Home</a>
+                <a href="ongoing.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-ongoing">On Going</a>
+                <a href="jadwal.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-jadwal">Jadwal Rilis</a>
+                <a href="list-anime.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-list">List Anime</a>
+                <a href="genre.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-genre">List Genre</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8 pb-20">
+        
+        <div class="flex items-center justify-between mb-6 border-b border-[#30363d] pb-4">
+            <h1 class="text-2xl font-bold text-white flex items-center gap-2">🔥 Anime Sedang Tayang</h1>
+            <span class="text-xs text-gray-500 bg-[#161b22] px-3 py-1 rounded border border-[#30363d]" id="page-indicator">Page 1</span>
+        </div>
+
+        <div id="loading" class="text-center py-20">
+            <div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p class="text-gray-500 text-sm">Memuat anime...</p>
+        </div>
+
+        <div id="anime-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 hidden">
+            </div>
+
+        <div id="pagination" class="hidden flex justify-center items-center gap-4 mt-10 pt-6 border-t border-[#30363d]">
+            <button id="btn-prev" class="px-4 py-2 bg-[#21262d] border border-[#30363d] rounded text-sm text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                ← Sebelumnya
+            </button>
+            
+            <span class="text-sm font-bold text-white">
+                Page <span id="current-page-num">1</span> / <span id="total-page-num">?</span>
+            </span>
+            
+            <button id="btn-next" class="px-4 py-2 bg-[#21262d] border border-[#30363d] rounded text-sm text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                Selanjutnya →
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        // Config Default
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "http://localhost:3000"; }
+        
+        let currentPage = 1;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Highlight Navigasi
+            const navItem = document.getElementById('nav-ongoing');
+            if(navItem) {
+                navItem.classList.add('text-blue-500', 'border-b-2', 'border-blue-500');
+                navItem.classList.remove('text-[#e5e7eb]');
+            }
+
+            // Load Halaman 1
+            fetchOngoing(1);
+
+            // Event Listener Tombol Pagination
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                if(currentPage > 1) fetchOngoing(currentPage - 1);
+            });
+            
+            document.getElementById('btn-next').addEventListener('click', () => {
+                fetchOngoing(currentPage + 1);
+            });
+        });
+
+        async function fetchOngoing(page) {
+            const loading = document.getElementById('loading');
+            const grid = document.getElementById('anime-grid');
+            const paginationDiv = document.getElementById('pagination');
+
+            // Reset Tampilan
+            loading.classList.remove('hidden');
+            grid.classList.add('hidden');
+            paginationDiv.classList.add('hidden');
+            
+            // Scroll ke atas
+            window.scrollTo(0,0);
+
+            try {
+                // Fetch API dengan parameter page
+                const req = await fetch(`${API_BASE_URL}/ongoing?p=${page}`);
+                if(!req.ok) throw new Error("Gagal fetch");
+                
+                const res = await req.json();
+                
+                // Ambil data sesuai JSON kamu
+                const animeList = res.data?.animeList || [];
+                const meta = res.pagination || {};
+
+                if(animeList.length === 0) {
+                    grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Tidak ada data.</p>';
+                    grid.classList.remove('hidden');
+                    loading.classList.add('hidden');
+                    return;
+                }
+
+                renderCards(animeList);
+                updatePagination(meta, page);
+
+                loading.classList.add('hidden');
+                grid.classList.remove('hidden');
+                paginationDiv.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = `<p class="col-span-full text-center text-red-500">Error: ${err.message}</p>`;
+                loading.classList.add('hidden');
+                grid.classList.remove('hidden');
+            }
+        }
+
+        function renderCards(list) {
+            const grid = document.getElementById('anime-grid');
+            let html = '';
+
+            list.forEach(anime => {
+                html += `
+                <a href="detail.html?id=${anime.animeId}" class="anime-card group relative block bg-[#161b22] rounded-lg overflow-hidden border border-[#30363d] hover:border-blue-500 transition-all">
+                    <div class="relative aspect-[3/4] overflow-hidden">
+                        <img src="${anime.poster}" alt="${anime.title}" class="w-full h-full object-cover" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-transparent to-transparent opacity-80"></div>
+                        
+                        <div class="absolute top-2 left-2 flex flex-col gap-1">
+                             <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">${anime.releaseDay}</span>
+                        </div>
+
+                        <div class="absolute top-2 right-2 bg-black/80 text-white text-[10px] px-1.5 py-0.5 rounded border border-gray-600">
+                            Ep ${anime.episodes}
+                        </div>
+                        
+                        <div class="play-overlay absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 bg-black/20 backdrop-blur-[1px]">
+                             <div class="bg-blue-600 rounded-full p-3 shadow-xl">
+                                <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3">
+                        <h3 class="text-[13px] font-bold text-gray-200 leading-snug line-clamp-2 group-hover:text-blue-400 h-[2.5em]" title="${anime.title}">
+                            ${anime.title}
+                        </h3>
+                        <div class="flex justify-between items-center mt-2 text-[11px] text-gray-500">
+                            <span>${anime.latestReleaseDate}</span>
+                            <span class="text-blue-400/80">Ongoing</span>
+                        </div>
+                    </div>
+                </a>`;
+            });
+            grid.innerHTML = html;
+        }
+
+        function updatePagination(meta, page) {
+            currentPage = page;
+            
+            // Update Teks Halaman
+            document.getElementById('current-page-num').innerText = currentPage;
+            document.getElementById('total-page-num').innerText = meta.totalPages || '?';
+            document.getElementById('page-indicator').innerText = `Page ${currentPage}`;
+
+            // Update State Tombol
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+
+            // Gunakan data dari JSON untuk disable/enable
+            btnPrev.disabled = !meta.hasPrevPage;
+            btnNext.disabled = !meta.hasNextPage;
+        }
+    </script>
+</body>
+</html>

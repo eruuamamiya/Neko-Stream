@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Rilis - NekoStream</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="config.js"></script>
+
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; }
+        
+        /* Custom Scrollbar untuk List Anime */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #161b22; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #58a6ff; }
+
+        /* Shimmer Animation */
+        .shimmer {
+            background: #161b22;
+            background-image: linear-gradient(to right, #161b22 0%, #21262d 20%, #161b22 40%, #161b22 100%);
+            background-size: 800px 100%; 
+            animation: placeholderShimmer 1.5s linear infinite forwards; 
+        }
+        @keyframes placeholderShimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+    <header class="bg-[#161b22] border-b border-[#30363d] sticky top-0 z-50 p-4 shadow-lg">
+        <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <nav class="flex flex-wrap justify-center gap-6">
+                <a href="index.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-home">Home</a>
+                <a href="ongoing.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-ongoing">On Going</a>
+                <a href="jadwal.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-jadwal">Jadwal Rilis</a>
+                <a href="list-anime.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-list">List Anime</a>
+                <a href="genre.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-genre">List Genre</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8 pb-20">
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-8 border-b border-[#30363d] pb-4">
+            <h1 class="text-2xl font-bold text-white flex items-center gap-2">📅 Jadwal Tayang</h1>
+            
+            <div id="today-badge" class="hidden inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold bg-green-900/30 text-green-400 border border-green-500/50">
+                <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                Hari Ini: <span id="nama-hari-ini" class="ml-1 uppercase tracking-wide">...</span>
+            </div>
+        </div>
+
+        <div id="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div class="h-80 rounded-xl shimmer border border-[#30363d]"></div>
+            <div class="h-80 rounded-xl shimmer border border-[#30363d]"></div>
+            <div class="h-80 rounded-xl shimmer border border-[#30363d]"></div>
+            <div class="h-80 rounded-xl shimmer border border-[#30363d]"></div>
+        </div>
+
+        <div id="error-msg" class="hidden text-center py-10 bg-red-900/10 border border-red-900/50 rounded-lg">
+            <p class="text-red-400 font-bold">Gagal Terhubung ke API</p>
+            <p class="text-gray-500 text-xs mt-1">Pastikan server STB menyala.</p>
+        </div>
+
+        <div id="schedule-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden">
+            </div>
+
+    </main>
+
+    <script>
+        // Fallback Config
+        if (typeof API_BASE_URL === 'undefined') {
+            var API_BASE_URL = "http://localhost:3000"; 
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Highlight Navigasi
+            const navItem = document.getElementById('nav-jadwal');
+            if(navItem) {
+                navItem.classList.add('text-blue-500', 'border-b-2', 'border-blue-500');
+                navItem.classList.remove('text-[#e5e7eb]');
+            }
+
+            // Cek Hari Ini
+            const daysMap = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const todayIndex = new Date().getDay();
+            const todayName = daysMap[todayIndex];
+
+            document.getElementById('nama-hari-ini').innerText = todayName;
+            document.getElementById('today-badge').classList.remove('hidden');
+
+            fetchJadwal(todayName);
+        });
+
+        async function fetchJadwal(todayName) {
+            const loading = document.getElementById('loading');
+            const errorMsg = document.getElementById('error-msg');
+            const grid = document.getElementById('schedule-grid');
+
+            try {
+                const req = await fetch(`${API_BASE_URL}/schedule`);
+                if(!req.ok) throw new Error("Gagal fetch");
+                
+                const res = await req.json();
+                
+                // Ambil data 'days' dari JSON baru kamu
+                const daysData = res.data?.days || [];
+
+                if(daysData.length === 0) {
+                    grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Data jadwal kosong.</p>';
+                } else {
+                    renderJadwal(daysData, todayName);
+                }
+
+                loading.classList.add('hidden');
+                grid.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                loading.classList.add('hidden');
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        function renderJadwal(days, todayName) {
+            const grid = document.getElementById('schedule-grid');
+            let html = '';
+
+            // Map order hari agar Senin di awal (Opsional, JSON kamu sudah urut Senin -> Minggu -> Random)
+            // Jadi kita pakai urutan asli JSON saja.
+
+            days.forEach(item => {
+                const dayName = item.day;
+                const isToday = dayName.toLowerCase() === todayName.toLowerCase();
+                const animeList = item.animeList || [];
+                
+                // Styling Kartu
+                // Jika hari ini: Border Hijau. Jika Random: Border Ungu.
+                let borderColor = 'border-[#30363d]';
+                let headerBg = 'bg-[#21262d]';
+                let shadow = '';
+                let badge = '';
+
+                if (isToday) {
+                    borderColor = 'border-green-500';
+                    headerBg = 'bg-green-700';
+                    shadow = 'shadow-[0_0_20px_rgba(34,197,94,0.15)]';
+                    badge = '<span class="bg-white text-green-800 text-[10px] font-bold px-2 py-0.5 rounded ml-auto uppercase">Hari Ini</span>';
+                } else if (dayName === 'Random') {
+                    borderColor = 'border-purple-500/50';
+                    headerBg = 'bg-purple-900/50';
+                    badge = '<span class="bg-purple-500 text-white text-[10px] font-bold px-2 py-0.5 rounded ml-auto">?</span>';
+                }
+
+                html += `
+                <div class="flex flex-col h-[500px] bg-[#161b22] rounded-xl border ${borderColor} ${shadow} overflow-hidden transition hover:border-gray-500">
+                    
+                    <div class="${headerBg} px-4 py-3 flex items-center shadow-md z-10">
+                        <h3 class="font-bold text-white tracking-wider uppercase text-sm">${dayName}</h3>
+                        ${badge}
+                        <span class="ml-2 text-xs text-gray-300/70">(${animeList.length})</span>
+                    </div>
+                    
+                    <div class="flex-grow overflow-y-auto custom-scroll p-2 space-y-1">
+                        ${renderAnimeList(animeList)}
+                    </div>
+                </div>`;
+            });
+
+            grid.innerHTML = html;
+        }
+
+        function renderAnimeList(list) {
+            if(list.length === 0) return '<div class="text-center text-gray-600 text-xs mt-10">Tidak ada jadwal</div>';
+
+            return list.map(anime => `
+                <a href="detail.html?id=${anime.animeId}" class="group block p-3 rounded-lg hover:bg-[#21262d] border border-transparent hover:border-[#30363d] transition">
+                    <div class="flex justify-between items-start gap-2">
+                        <span class="text-[13px] text-gray-300 font-medium leading-snug group-hover:text-blue-400">
+                            ${anime.title}
+                        </span>
+                    </div>
+                </a>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

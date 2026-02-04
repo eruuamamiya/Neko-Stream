@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genre Anime - NekoStream</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+
+    <style>
+        body { background-color: #0d1117; color: #e0e0e0; font-family: sans-serif; }
+        .card-font { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .text-shadow { text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+        .nav-link { color: #e5e7eb; font-size: 0.875rem; font-weight: 600; transition: color 0.2s; }
+        .nav-link:hover { color: #60a5fa; } 
+        .nav-link.active { color: #3b82f6; font-weight: bold; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col pb-20">
+
+    <header class="bg-[#161b22] border-b border-[#30363d] sticky top-0 z-50 p-4 shadow-lg">
+        <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <nav class="flex flex-wrap justify-center gap-6">
+                <a href="index.html" class="nav-link" id="nav-home">Home</a>
+                <a href="ongoing.html" class="nav-link" id="nav-ongoing">On Going</a>
+                <a href="jadwal.html" class="nav-link" id="nav-jadwal">Jadwal Rilis</a>
+                <a href="list-anime.html" class="nav-link" id="nav-list">List Anime</a>
+                <a href="genre.html" class="nav-link" id="nav-genre">List Genre</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-2 md:p-4 max-w-5xl">
+        
+        <div class="flex items-center justify-between mb-6 border-b border-[#30363d] pb-4">
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <span class="text-blue-500">📂</span> 
+                Genre: <span id="genre-title" class="capitalize">...</span>
+            </h1>
+            <span class="text-xs text-gray-400 bg-[#161b22] px-3 py-1 rounded border border-[#30363d]" id="page-indicator">Page 1</span>
+        </div>
+
+        <div id="loading" class="text-center py-20">
+            <div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p class="text-gray-500 text-xs">Memuat data genre...</p>
+        </div>
+
+        <div id="anime-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 hidden"></div>
+
+        <div id="pagination" class="hidden flex justify-center items-center gap-4 mt-8 pt-6 border-t border-[#30363d]">
+            <button id="btn-prev" class="px-4 py-2 bg-[#21262d] border border-[#30363d] rounded text-xs font-bold text-gray-400 hover:text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition uppercase">
+                ← Prev
+            </button>
+            <span class="text-xs font-bold text-white">
+                Page <span id="current-page-num">1</span> / <span id="total-page-num">?</span>
+            </span>
+            <button id="btn-next" class="px-4 py-2 bg-[#21262d] border border-[#30363d] rounded text-xs font-bold text-gray-400 hover:text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition uppercase">
+                Next →
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "http://localhost:3000"; }
+        
+        // Ambil ID Genre dari URL (contoh: genre-result.html?id=isekai)
+        const urlParams = new URLSearchParams(window.location.search);
+        const genreId = urlParams.get('id');
+        let currentPage = 1;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Highlight Menu Genre
+            const nav = document.getElementById('nav-genre');
+            if(nav) {
+                nav.classList.add('text-blue-500', 'border-b-2', 'border-blue-500');
+                nav.classList.remove('text-[#e5e7eb]');
+            }
+
+            if (!genreId) {
+                document.getElementById('loading').innerHTML = '<p class="text-red-500">Genre tidak ditemukan.</p>';
+                return;
+            }
+
+            // Set Judul
+            document.getElementById('genre-title').innerText = genreId.replace(/-/g, ' ');
+
+            fetchGenreData(1);
+            
+            // Tombol Pagination
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                if(currentPage > 1) fetchGenreData(currentPage - 1);
+            });
+            document.getElementById('btn-next').addEventListener('click', () => {
+                fetchGenreData(currentPage + 1);
+            });
+        });
+
+        async function fetchGenreData(page) {
+            const loading = document.getElementById('loading');
+            const grid = document.getElementById('anime-grid');
+            const paginationDiv = document.getElementById('pagination');
+
+            loading.classList.remove('hidden');
+            grid.classList.add('hidden');
+            paginationDiv.classList.add('hidden');
+            window.scrollTo(0,0);
+
+            try {
+                // Fetch API: /api/genres/isekai?p=1
+                const req = await fetch(`${API_BASE_URL}/genres/${genreId}?p=${page}`);
+                if(!req.ok) throw new Error("Gagal fetch data");
+                
+                const res = await req.json();
+                
+                // Ambil data sesuai JSON kamu
+                const animeList = res.data?.animeList || [];
+                const meta = res.pagination || {};
+
+                if(animeList.length === 0) {
+                    grid.innerHTML = '<p class="col-span-full text-center text-gray-500 text-xs">Tidak ada data di halaman ini.</p>';
+                    grid.classList.remove('hidden');
+                    loading.classList.add('hidden');
+                    return;
+                }
+
+                renderCards(animeList);
+                updatePagination(meta, page);
+
+                loading.classList.add('hidden');
+                grid.classList.remove('hidden');
+                paginationDiv.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = `<p class="col-span-full text-center text-red-500 text-xs">Error: ${err.message}</p>`;
+                loading.classList.add('hidden');
+                grid.classList.remove('hidden');
+            }
+        }
+
+        function renderCards(list) {
+            const grid = document.getElementById('anime-grid');
+            let html = '';
+
+            list.forEach(anime => {
+                const score = anime.score || '?';
+                const studio = anime.studios || 'Unknown';
+                const season = anime.season || '';
+
+                html += `
+                <a href="detail.html?id=${anime.animeId}" class="relative aspect-[3/4] overflow-hidden bg-gray-800 group shadow-lg">
+                    <img src="${anime.poster}" alt="${anime.title}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy">
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
+
+                    <div class="absolute top-0 left-0 bg-black/60 backdrop-blur-sm text-yellow-400 text-[10px] font-bold px-2 py-1 flex items-center gap-1 border-r border-b border-white/10">
+                        ★ ${score}
+                    </div>
+
+                    <div class="absolute bottom-9 left-2 right-2 text-[9px] text-gray-300 leading-tight opacity-90">
+                        <div class="truncate text-blue-300 font-medium">${studio}</div>
+                        <div class="text-xs text-white text-shadow">${season}</div>
+                    </div>
+
+                    <div class="absolute bottom-0 w-full bg-black/70 backdrop-blur-[2px] p-2 border-t border-white/5">
+                        <h3 class="text-white text-[11px] font-medium leading-tight line-clamp-1 text-center card-font">
+                            ${anime.title}
+                        </h3>
+                    </div>
+                </a>`;
+            });
+            grid.innerHTML = html;
+        }
+
+        function updatePagination(meta, page) {
+            currentPage = page;
+            
+            document.getElementById('current-page-num').innerText = currentPage;
+            document.getElementById('total-page-num').innerText = meta.totalPages || '?';
+            document.getElementById('page-indicator').innerText = `Page ${currentPage}`;
+
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+
+            btnPrev.disabled = !meta.hasPrevPage;
+            btnNext.disabled = !meta.hasNextPage;
+        }
+    </script>
+</body>
+</html>
