@@ -43,11 +43,11 @@
                 </div>
 
                 <div class="space-y-6">
-                    <h3 class="text-lg font-bold text-gray-300 border-b border-[#30363d] pb-2">
-                        📥 Link Download
+                    <h3 class="text-lg font-bold text-gray-300 border-b border-[#30363d] pb-2 flex items-center gap-2">
+                        <span>📦</span> Link Download Batch
                     </h3>
                     
-                    <div id="download-list" class="grid gap-4">
+                    <div id="download-list" class="space-y-6">
                         </div>
                 </div>
 
@@ -63,7 +63,7 @@
 
     <script>
         // Gunakan Config Global
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu/"; }
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu/batch"; }
 
         const urlParams = new URLSearchParams(window.location.search);
         const batchId = urlParams.get('id');
@@ -89,8 +89,8 @@
                 
                 const res = await req.json();
                 
-                // Ambil data (sesuaikan jika struktur JSON sedikit berbeda)
-                const data = res.data; 
+                // DATA ADA DI 'data.details' SESUAI JSON KAMU
+                const data = res.data?.details; 
 
                 if (!data) throw new Error("Data batch kosong.");
 
@@ -105,9 +105,9 @@
                 }
 
                 // 2. Render List Download
-                // Cek downloadUrl (standar API) atau downloadList
-                const downloads = data.downloadUrl || data.downloadList || [];
-                renderDownloadList(downloads);
+                // Struktur: data.download.formatList -> qualityList -> urlList
+                const formatList = data.download?.formatList || [];
+                renderDownloadList(formatList);
 
                 loading.classList.add('hidden');
                 content.classList.remove('hidden');
@@ -118,35 +118,50 @@
             }
         }
 
-        function renderDownloadList(downloadList) {
+        function renderDownloadList(formatList) {
             const container = document.getElementById('download-list');
             
-            if (!downloadList || downloadList.length === 0) {
+            if (!formatList || formatList.length === 0) {
                 container.innerHTML = '<p class="text-center text-gray-500">Link download belum tersedia.</p>';
                 return;
             }
 
             let html = '';
 
-            downloadList.forEach(quality => {
-                const resName = quality.title || 'Unknown Res'; // 360p / 480p / 720p
-                const size = quality.size || '?';
-                const urls = quality.urlList || []; 
+            formatList.forEach(format => {
+                // Judul Format (Misal: "86 Batch Subtitle Indonesia")
+                html += `
+                <div>
+                    <h4 class="text-blue-400 font-bold text-md mb-3">${format.title}</h4>
+                    <div class="grid gap-3">
+                `;
+
+                // Loop Quality (360p, 480p, dll)
+                const qualities = format.qualityList || [];
+                qualities.forEach(quality => {
+                    const resName = quality.title || 'Unknown';
+                    const size = quality.size || '?';
+                    const urls = quality.urlList || [];
+
+                    html += `
+                    <div class="bg-[#0d1117] border border-[#30363d] rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3 border-b border-[#30363d] pb-2">
+                            <span class="text-gray-200 font-bold text-sm">${resName}</span>
+                            <span class="text-gray-500 text-xs font-mono bg-gray-800 px-2 py-1 rounded">${size}</span>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2">
+                            ${urls.map(link => `
+                                <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
+                                   class="flex items-center gap-1 bg-blue-900/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600 hover:text-white px-3 py-2 rounded text-xs font-bold transition">
+                                   <span>⬇</span> ${link.title}
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>`;
+                });
 
                 html += `
-                <div class="bg-[#0d1117] border border-[#30363d] rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-3 border-b border-[#30363d] pb-2">
-                        <span class="text-blue-400 font-bold text-lg">${resName}</span>
-                        <span class="text-gray-500 text-xs font-mono bg-gray-800 px-2 py-1 rounded">${size}</span>
-                    </div>
-                    
-                    <div class="flex flex-wrap gap-2">
-                        ${urls.map(link => `
-                            <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
-                               class="flex items-center gap-1 bg-blue-900/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600 hover:text-white px-3 py-2 rounded text-xs font-bold transition">
-                               <span>⬇</span> ${link.title}
-                            </a>
-                        `).join('')}
                     </div>
                 </div>`;
             });
@@ -156,4 +171,3 @@
     </script>
 </body>
 </html>
-
