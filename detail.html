@@ -48,8 +48,11 @@
             <div class="w-full md:w-[300px] flex-shrink-0">
                 <div class="sticky top-24">
                     <img id="anime-poster" src="" alt="Poster" class="w-full rounded-lg shadow-2xl border border-[#30363d] object-cover aspect-[3/4]">
+                    
                     <div id="batch-container" class="mt-4 hidden">
-                        <a id="batch-link" href="#" class="block w-full bg-green-700 hover:bg-green-600 text-white text-center py-2 rounded font-bold shadow-lg transition">Download Batch (ZIP)</a>
+                        <a id="batch-link" href="#" class="block w-full bg-green-700 hover:bg-green-600 text-white text-center py-3 rounded-lg font-bold shadow-lg transition flex items-center justify-center gap-2">
+                            <span>📦</span> Download Batch (ZIP)
+                        </a>
                     </div>
                 </div>
             </div>
@@ -99,8 +102,7 @@
     </main>
 
     <script>
-        // Config Global
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu"; }
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu/anime/"; }
 
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -119,16 +121,19 @@
             const mainContent = document.getElementById('main-content');
             
             try {
+                // Endpoint API
                 const req = await fetch(`${API_BASE_URL}/otakudesu/anime/${id}`);
                 
                 if (!req.ok) throw new Error("Gagal mengambil data anime.");
                 
                 const res = await req.json();
+                
+                // Ambil Data dari 'details'
                 const data = res.data?.details;
 
                 if (!data) throw new Error("Data anime kosong.");
 
-                // Render Info
+                // --- RENDER INFO ---
                 document.title = `${data.title} - NekoStream`;
                 document.getElementById('anime-title').innerText = data.title;
                 document.getElementById('anime-japanese').innerText = data.japanese || '';
@@ -138,7 +143,8 @@
                 document.getElementById('anime-type').innerText = data.type;
                 document.getElementById('anime-status').innerText = data.status;
                 
-                if(data.status.toLowerCase() === 'completed') {
+                // Ubah warna badge jika Completed
+                if(data.status && data.status.toLowerCase() === 'completed') {
                     const statusBadge = document.getElementById('anime-status');
                     statusBadge.classList.remove('bg-purple-900/30', 'text-purple-400', 'border-purple-500/30');
                     statusBadge.classList.add('bg-green-900/30', 'text-green-400', 'border-green-500/30');
@@ -171,19 +177,17 @@
                     synopsisContainer.innerText = "Sinopsis tidak tersedia.";
                 }
 
-                // --- FIX: RENDER BATCH BUTTON DENGAN ID YANG BENAR ---
-                if (data.batch) {
+                // --- FIX LOGIKA BATCH (SESUAI JSON KAMU) ---
+                // JSON kamu: "batch": { "batchId": "egtsix-batch-sub-indo", ... }
+                
+                if (data.batch && data.batch.batchId) {
+                    // Jika ada objek batch dan ada ID-nya
                     document.getElementById('batch-container').classList.remove('hidden');
-                    
-                    // Cek di mana batchId tersimpan (bisa batchId atau id)
-                    const batchId = data.batch.batchId || data.batch.id;
-                    
-                    if (batchId) {
-                        document.getElementById('batch-link').href = `batch.html?id=${batchId}`;
-                    } else {
-                        document.getElementById('batch-link').href = "#";
-                        console.warn("Batch ID tidak ditemukan di respons API.");
-                    }
+                    document.getElementById('batch-link').href = `batch.html?id=${data.batch.batchId}`;
+                } 
+                else {
+                    // Jika tidak ada batch, sembunyikan container
+                    document.getElementById('batch-container').classList.add('hidden');
                 }
 
                 renderEpisodeList(data.episodeList);
