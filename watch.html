@@ -56,38 +56,37 @@
 
         <div id="watch-content" class="hidden">
             
-            <h1 id="ep-title" class="text-xl md:text-2xl font-bold text-white mb-4 leading-tight">...</h1>
+            <h1 id="ep-title" class="text-lg md:text-xl font-bold text-white mb-4 leading-tight">...</h1>
 
-            <div class="video-container mb-4">
+            <div class="video-container mb-4 border border-[#30363d]">
                 <iframe id="video-frame" src="" allowfullscreen></iframe>
             </div>
 
-            <div class="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-8 bg-[#161b22] p-4 rounded-lg border border-[#30363d]">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center mb-6 bg-[#161b22] p-4 rounded-lg border border-[#30363d]">
                 
                 <div class="w-full md:w-auto">
-                    <label class="block text-xs text-gray-500 mb-1">Pilih Server / Resolusi:</label>
-                    <select id="server-select" class="w-full md:w-64 bg-[#0d1117] text-white text-sm border border-[#30363d] rounded p-2 focus:border-blue-500 focus:outline-none">
-                        <option>Loading servers...</option>
+                    <label class="block text-xs text-gray-500 mb-1">Ganti Episode:</label>
+                    <select id="episode-select" class="w-full md:w-64 bg-[#0d1117] text-white text-sm border border-[#30363d] rounded p-2 focus:border-blue-500 focus:outline-none">
+                        <option>Memuat list...</option>
                     </select>
                 </div>
 
                 <div class="flex gap-2 w-full md:w-auto justify-end">
-                    <a id="btn-prev" href="#" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-bold text-gray-300 pointer-events-none opacity-50">
+                    <a id="btn-prev" href="#" class="px-4 py-2 bg-gray-700 rounded text-sm font-bold text-gray-400 cursor-not-allowed transition" style="pointer-events: none;">
                         ← Prev
                     </a>
-                    <a href="index.html" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-bold text-white">
-                        List
-                    </a>
-                    <a id="btn-next" href="#" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-bold text-gray-300 pointer-events-none opacity-50">
+                    <a id="btn-next" href="#" class="px-4 py-2 bg-gray-700 rounded text-sm font-bold text-gray-400 cursor-not-allowed transition" style="pointer-events: none;">
                         Next →
                     </a>
                 </div>
             </div>
 
-            <div class="mb-8">
-                <h3 class="text-lg font-bold text-white mb-3 border-b border-[#30363d] pb-2">📥 Download</h3>
-                <div id="download-list" class="space-y-2 text-sm">
-                    <p class="text-gray-500">Memuat link download...</p>
+            <div class="mb-8 bg-[#161b22] p-5 rounded-lg border border-[#30363d]">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="text-green-500">📥</span> Download
+                </h3>
+                <div id="download-container" class="space-y-4">
+                    <p class="text-gray-500 text-sm">Tidak ada link download.</p>
                 </div>
             </div>
 
@@ -96,24 +95,24 @@
 
     <script>
         // Gunakan Config Global
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu"; }
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com"; }
 
         const urlParams = new URLSearchParams(window.location.search);
         const episodeId = urlParams.get('id');
 
         document.addEventListener("DOMContentLoaded", () => {
             if (!episodeId) {
-                showError("ID Episode tidak ditemukan. Pilih episode dari halaman detail.");
+                showError("ID Episode tidak ditemukan. Silakan pilih dari halaman detail.");
                 return;
             }
             fetchEpisodeData();
         });
 
-        // Event Ganti Server
-        document.getElementById('server-select').addEventListener('change', (e) => {
-            const url = e.target.value;
-            if(url) {
-                document.getElementById('video-frame').src = url;
+        // Event listener ganti episode via dropdown
+        document.getElementById('episode-select').addEventListener('change', (e) => {
+            const newId = e.target.value;
+            if (newId && newId !== "#") {
+                window.location.href = `watch.html?id=${newId}`;
             }
         });
 
@@ -129,26 +128,39 @@
                 if (!req.ok) throw new Error("Gagal mengambil data episode");
                 
                 const res = await req.json();
-                const data = res.data; // Sesuaikan jika struktur beda
+                
+                // DATA ADA DI DALAM 'details' (Sesuai JSON Kamu)
+                const data = res.data?.details;
 
                 if (!data) throw new Error("Data episode kosong.");
 
-                // 1. Set Judul & Info
-                document.title = `Nonton ${data.title || 'Anime'}`;
-                document.getElementById('ep-title').innerText = data.title || 'Episode';
+                // 1. Set Judul
+                document.title = data.title;
+                document.getElementById('ep-title').innerText = data.title;
 
-                // 2. Navigasi Next/Prev
-                setupNavigation(data.info); // Asumsi ada info next/prev episode
+                // 2. Set Video Player (Default Streaming URL)
+                const iframe = document.getElementById('video-frame');
+                if (data.defaultStreamingUrl) {
+                    iframe.src = data.defaultStreamingUrl;
+                } else {
+                    iframe.src = ""; // Kosongkan jika tidak ada link
+                    alert("Link streaming tidak ditemukan.");
+                }
 
-                // 3. Render Server List (Stream)
-                // Kita perlu tau struktur streamList di JSON kamu nanti
-                // Ini logika standar Otakudesu API pada umumnya
-                const streamList = data.streamList || data.mirrorList || [];
-                setupServerList(streamList, data.streamLink);
+                // 3. Navigasi Next/Prev
+                setupNavigation(data);
 
-                // 4. Render Download List
-                const downloadList = data.downloadUrl || data.downloadList || [];
-                renderDownloadList(downloadList);
+                // 4. Download Links
+                // Cek data.download.qualityList (Sesuai JSON)
+                if (data.download && data.download.qualityList) {
+                    renderDownloadList(data.download.qualityList);
+                }
+
+                // 5. Episode List Dropdown
+                // Cek data.info.episodeList
+                if (data.info && data.info.episodeList) {
+                    setupEpisodeDropdown(data.info.episodeList);
+                }
 
                 loading.classList.add('hidden');
                 content.classList.remove('hidden');
@@ -159,89 +171,88 @@
             }
         }
 
-        function setupServerList(list, defaultUrl) {
-            const select = document.getElementById('server-select');
-            const iframe = document.getElementById('video-frame');
-            select.innerHTML = '';
-
-            // Jika ada list stream
-            if (list.length > 0) {
-                list.forEach((server, index) => {
-                    // Cari URL (kadang namanya 'url', 'link', atau 'content')
-                    const url = server.url || server.link;
-                    // Cari Nama (kadang 'driver', 'resolution', 'server')
-                    const name = server.driver || server.resolution || server.server || `Server ${index+1}`;
-                    
-                    if (url) {
-                        const option = document.createElement('option');
-                        option.value = url;
-                        option.text = name;
-                        select.appendChild(option);
-                    }
-                });
-
-                // Set default player ke server pertama
-                iframe.src = select.options[0].value;
-            } 
-            // Fallback jika tidak ada list tapi ada single link
-            else if (defaultUrl) {
-                iframe.src = defaultUrl;
-                select.innerHTML = '<option selected>Default Server</option>';
-            } else {
-                select.innerHTML = '<option>Server tidak tersedia</option>';
-            }
-        }
-
-        function setupNavigation(info) {
-            // Biasanya di API Otakudesu ada info: { prevEpisode: "id", nextEpisode: "id" }
+        function setupNavigation(data) {
             const btnPrev = document.getElementById('btn-prev');
             const btnNext = document.getElementById('btn-next');
 
-            if (info) {
-                if (info.prevEpisode) {
-                    btnPrev.href = `watch.html?id=${info.prevEpisode}`;
-                    btnPrev.classList.remove('pointer-events-none', 'opacity-50');
-                    btnPrev.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                }
-                if (info.nextEpisode) {
-                    btnNext.href = `watch.html?id=${info.nextEpisode}`;
-                    btnNext.classList.remove('pointer-events-none', 'opacity-50');
-                    btnNext.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                }
+            // Cek hasPrevEpisode (boolean)
+            if (data.hasPrevEpisode && data.prevEpisode) {
+                btnPrev.href = `watch.html?id=${data.prevEpisode.episodeId}`;
+                btnPrev.classList.remove('bg-gray-700', 'text-gray-400', 'cursor-not-allowed');
+                btnPrev.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+                btnPrev.style.pointerEvents = 'auto';
+            }
+
+            // Cek hasNextEpisode (boolean)
+            if (data.hasNextEpisode && data.nextEpisode) {
+                btnNext.href = `watch.html?id=${data.nextEpisode.episodeId}`;
+                btnNext.classList.remove('bg-gray-700', 'text-gray-400', 'cursor-not-allowed');
+                btnNext.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+                btnNext.style.pointerEvents = 'auto';
             }
         }
 
-        function renderDownloadList(list) {
-            const container = document.getElementById('download-list');
-            if (!list || (Array.isArray(list) && list.length === 0)) {
-                container.innerHTML = '<p class="text-gray-600">Link download tidak tersedia.</p>';
+        function renderDownloadList(qualityList) {
+            const container = document.getElementById('download-container');
+            
+            if (qualityList.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">Tidak ada link download.</p>';
                 return;
             }
 
-            // Render list download (logic disesuaikan nanti dengan JSON)
-            // Ini kerangka kasar
-            let html = '<div class="grid gap-2">';
-            
-            // Logika render download (biasanya nested array di Otakudesu)
-            // Kamu kirim JSON episode nanti biar saya rapikan bagian ini
-            if (Array.isArray(list)) {
-                list.forEach(item => {
-                    // Cek struktur item download
-                     html += `<div class="bg-[#21262d] p-2 rounded text-xs text-gray-300">${JSON.stringify(item).substring(0,50)}...</div>`;
-                });
-            }
-            
-            html += '</div>';
+            let html = '';
+            qualityList.forEach(quality => {
+                // quality.title = "360p", quality.size = "38.8 MB"
+                const resTitle = quality.title || 'Unknown';
+                const size = quality.size || '';
+                const urls = quality.urlList || [];
+
+                html += `
+                <div class="border-b border-[#30363d] pb-3 last:border-0 last:pb-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-gray-700 text-white text-xs font-bold px-2 py-1 rounded">${resTitle}</span>
+                        <span class="text-xs text-gray-500">${size}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${urls.map(link => `
+                            <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
+                               class="text-xs bg-blue-900/30 text-blue-400 border border-blue-500/30 hover:bg-blue-600 hover:text-white px-3 py-1 rounded transition">
+                               ${link.title}
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>`;
+            });
+
             container.innerHTML = html;
+        }
+
+        function setupEpisodeDropdown(list) {
+            const select = document.getElementById('episode-select');
+            select.innerHTML = ''; // Clear loading
+
+            // JSON Otakudesu biasanya mengembalikan list dari episode terbaru ke terlama
+            // Kita masukkan semua ke dropdown
+            list.forEach(ep => {
+                const option = document.createElement('option');
+                option.value = ep.episodeId;
+                option.text = ep.title; // Misal: "Episode 12"
+                
+                // Tandai episode yang sedang aktif
+                if (ep.episodeId === episodeId) {
+                    option.selected = true;
+                }
+                
+                select.appendChild(option);
+            });
         }
 
         function showError(msg) {
             const debug = document.getElementById('debug-area');
             document.getElementById('loading').classList.add('hidden');
             debug.classList.remove('hidden');
-            debug.innerText = "Error: " + msg + "\n\n(Silakan kirim screenshot JSON episode ke AI untuk diperbaiki)";
+            debug.innerText = "Error: " + msg;
         }
     </script>
 </body>
 </html>
-
