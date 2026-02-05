@@ -99,8 +99,8 @@
     </main>
 
     <script>
-        // --- FIX: DEKLARASI GLOBAL SEPERTI YANG KAMU MINTA ---
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com"; }
+        // Config Global
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu"; }
 
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -119,7 +119,6 @@
             const mainContent = document.getElementById('main-content');
             
             try {
-                // --- FIX: LANGSUNG PAKE GLOBAL VARIABLE ---
                 const req = await fetch(`${API_BASE_URL}/otakudesu/anime/${id}`);
                 
                 if (!req.ok) throw new Error("Gagal mengambil data anime.");
@@ -172,10 +171,19 @@
                     synopsisContainer.innerText = "Sinopsis tidak tersedia.";
                 }
 
-                // Render Batch
+                // --- FIX: RENDER BATCH BUTTON DENGAN ID YANG BENAR ---
                 if (data.batch) {
                     document.getElementById('batch-container').classList.remove('hidden');
-                    document.getElementById('batch-link').href = "#"; 
+                    
+                    // Cek di mana batchId tersimpan (bisa batchId atau id)
+                    const batchId = data.batch.batchId || data.batch.id;
+                    
+                    if (batchId) {
+                        document.getElementById('batch-link').href = `batch.html?id=${batchId}`;
+                    } else {
+                        document.getElementById('batch-link').href = "#";
+                        console.warn("Batch ID tidak ditemukan di respons API.");
+                    }
                 }
 
                 renderEpisodeList(data.episodeList);
