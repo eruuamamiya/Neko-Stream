@@ -11,10 +11,9 @@
         .nav-link { color: #e5e7eb; font-size: 0.875rem; font-weight: 600; transition: color 0.2s; }
         .nav-link:hover { color: #60a5fa; }
         
-        /* Responsive Iframe Container */
         .video-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            padding-bottom: 56.25%; 
             height: 0;
             overflow: hidden;
             background: #000;
@@ -28,6 +27,13 @@
             width: 100%;
             height: 100%;
             border: 0;
+        }
+
+        /* Style untuk tombol server aktif */
+        .server-btn.active {
+            background-color: #2563eb; /* Blue 600 */
+            color: white;
+            border-color: #3b82f6;
         }
     </style>
 </head>
@@ -52,38 +58,43 @@
             <p class="text-gray-500 text-xs">Memuat video...</p>
         </div>
 
-        <div id="debug-area" class="hidden bg-black border border-red-500 p-4 rounded mb-6 text-xs text-gray-300 overflow-x-auto"></div>
-
         <div id="watch-content" class="hidden">
             
             <h1 id="ep-title" class="text-lg md:text-xl font-bold text-white mb-4 leading-tight">...</h1>
 
-            <div class="video-container mb-4 border border-[#30363d]">
+            <div class="video-container mb-6 border border-[#30363d]">
                 <iframe id="video-frame" src="" allowfullscreen></iframe>
             </div>
 
+            <div id="server-container" class="mb-6 bg-[#161b22] p-4 rounded-lg border border-[#30363d] hidden">
+                <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
+                    <span>📡</span> Ganti Server / Resolusi
+                </h3>
+                <div id="server-list" class="space-y-3">
+                    </div>
+            </div>
+
             <div class="flex flex-col md:flex-row gap-4 justify-between items-center mb-6 bg-[#161b22] p-4 rounded-lg border border-[#30363d]">
-                
                 <div class="w-full md:w-auto">
-                    <label class="block text-xs text-gray-500 mb-1">Ganti Episode:</label>
-                    <select id="episode-select" class="w-full md:w-64 bg-[#0d1117] text-white text-sm border border-[#30363d] rounded p-2 focus:border-blue-500 focus:outline-none">
-                        <option>Memuat list...</option>
+                    <label class="block text-xs text-gray-500 mb-1">Pilih Episode Lain:</label>
+                    <select id="episode-select" class="w-full md:w-64 bg-[#0d1117] text-white text-sm border border-[#30363d] rounded p-2 focus:border-blue-500 focus:outline-none cursor-pointer">
+                        <option value="#">Memuat list...</option>
                     </select>
                 </div>
 
                 <div class="flex gap-2 w-full md:w-auto justify-end">
-                    <a id="btn-prev" href="#" class="px-4 py-2 bg-gray-700 rounded text-sm font-bold text-gray-400 cursor-not-allowed transition" style="pointer-events: none;">
-                        ← Prev
+                    <a id="btn-prev" href="#" class="px-4 py-2 bg-gray-700 rounded text-sm font-bold text-gray-400 cursor-not-allowed transition pointer-events-none flex items-center gap-1">
+                        <span>←</span> Prev
                     </a>
-                    <a id="btn-next" href="#" class="px-4 py-2 bg-gray-700 rounded text-sm font-bold text-gray-400 cursor-not-allowed transition" style="pointer-events: none;">
-                        Next →
+                    <a id="btn-next" href="#" class="px-4 py-2 bg-gray-700 rounded text-sm font-bold text-gray-400 cursor-not-allowed transition pointer-events-none flex items-center gap-1">
+                        Next <span>→</span>
                     </a>
                 </div>
             </div>
 
             <div class="mb-8 bg-[#161b22] p-5 rounded-lg border border-[#30363d]">
-                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <span class="text-green-500">📥</span> Download
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2 border-b border-[#30363d] pb-2">
+                    <span class="text-green-500">📥</span> Link Download
                 </h3>
                 <div id="download-container" class="space-y-4">
                     <p class="text-gray-500 text-sm">Tidak ada link download.</p>
@@ -94,26 +105,23 @@
     </main>
 
     <script>
-        // Gunakan Config Global
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com"; }
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu"; }
 
         const urlParams = new URLSearchParams(window.location.search);
         const episodeId = urlParams.get('id');
 
         document.addEventListener("DOMContentLoaded", () => {
             if (!episodeId) {
-                showError("ID Episode tidak ditemukan. Silakan pilih dari halaman detail.");
+                alert("ID Episode tidak ditemukan.");
                 return;
             }
             fetchEpisodeData();
         });
 
-        // Event listener ganti episode via dropdown
+        // Dropdown Ganti Episode
         document.getElementById('episode-select').addEventListener('change', (e) => {
             const newId = e.target.value;
-            if (newId && newId !== "#") {
-                window.location.href = `watch.html?id=${newId}`;
-            }
+            if (newId && newId !== "#") window.location.href = `watch.html?id=${newId}`;
         });
 
         async function fetchEpisodeData() {
@@ -121,43 +129,33 @@
             const content = document.getElementById('watch-content');
             
             try {
-                // Endpoint: /otakudesu/episode/{episodeId}
                 const endpoint = `${API_BASE_URL}/otakudesu/episode/${episodeId}`;
-                
                 const req = await fetch(endpoint);
-                if (!req.ok) throw new Error("Gagal mengambil data episode");
-                
                 const res = await req.json();
-                
-                // DATA ADA DI DALAM 'details' (Sesuai JSON Kamu)
                 const data = res.data?.details;
 
                 if (!data) throw new Error("Data episode kosong.");
 
-                // 1. Set Judul
+                // 1. Info Utama
                 document.title = data.title;
                 document.getElementById('ep-title').innerText = data.title;
 
-                // 2. Set Video Player (Default Streaming URL)
+                // 2. Default Player
                 const iframe = document.getElementById('video-frame');
                 if (data.defaultStreamingUrl) {
                     iframe.src = data.defaultStreamingUrl;
-                } else {
-                    iframe.src = ""; // Kosongkan jika tidak ada link
-                    alert("Link streaming tidak ditemukan.");
                 }
 
-                // 3. Navigasi Next/Prev
-                setupNavigation(data);
+                // 3. Render Server List (FITUR BARU)
+                if (data.server && data.server.qualityList) {
+                    renderServerList(data.server.qualityList);
+                }
 
-                // 4. Download Links
-                // Cek data.download.qualityList (Sesuai JSON)
+                // 4. Navigasi & Download
+                setupNavigation(data);
                 if (data.download && data.download.qualityList) {
                     renderDownloadList(data.download.qualityList);
                 }
-
-                // 5. Episode List Dropdown
-                // Cek data.info.episodeList
                 if (data.info && data.info.episodeList) {
                     setupEpisodeDropdown(data.info.episodeList);
                 }
@@ -167,58 +165,36 @@
 
             } catch (err) {
                 console.error(err);
-                showError(err.message);
+                loading.innerHTML = `<p class="text-red-500">Error: ${err.message}</p>`;
             }
         }
 
-        function setupNavigation(data) {
-            const btnPrev = document.getElementById('btn-prev');
-            const btnNext = document.getElementById('btn-next');
-
-            // Cek hasPrevEpisode (boolean)
-            if (data.hasPrevEpisode && data.prevEpisode) {
-                btnPrev.href = `watch.html?id=${data.prevEpisode.episodeId}`;
-                btnPrev.classList.remove('bg-gray-700', 'text-gray-400', 'cursor-not-allowed');
-                btnPrev.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                btnPrev.style.pointerEvents = 'auto';
-            }
-
-            // Cek hasNextEpisode (boolean)
-            if (data.hasNextEpisode && data.nextEpisode) {
-                btnNext.href = `watch.html?id=${data.nextEpisode.episodeId}`;
-                btnNext.classList.remove('bg-gray-700', 'text-gray-400', 'cursor-not-allowed');
-                btnNext.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                btnNext.style.pointerEvents = 'auto';
-            }
-        }
-
-        function renderDownloadList(qualityList) {
-            const container = document.getElementById('download-container');
+        // --- FUNGSI RENDER LIST SERVER ---
+        function renderServerList(qualityList) {
+            const container = document.getElementById('server-list');
+            const wrapper = document.getElementById('server-container');
             
-            if (qualityList.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-sm">Tidak ada link download.</p>';
-                return;
-            }
+            if (!qualityList || qualityList.length === 0) return;
 
+            wrapper.classList.remove('hidden');
             let html = '';
+
             qualityList.forEach(quality => {
-                // quality.title = "360p", quality.size = "38.8 MB"
-                const resTitle = quality.title || 'Unknown';
-                const size = quality.size || '';
-                const urls = quality.urlList || [];
+                // quality.title = "Mirror 360p"
+                const resName = quality.title.replace('Mirror', '').trim(); 
+                const servers = quality.serverList || [];
 
                 html += `
-                <div class="border-b border-[#30363d] pb-3 last:border-0 last:pb-0">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="bg-gray-700 text-white text-xs font-bold px-2 py-1 rounded">${resTitle}</span>
-                        <span class="text-xs text-gray-500">${size}</span>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 border-b border-[#30363d] pb-2 last:border-0">
+                    <div class="w-20 shrink-0">
+                        <span class="text-xs font-bold text-blue-400 bg-blue-900/20 px-2 py-1 rounded border border-blue-500/30">${resName}</span>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        ${urls.map(link => `
-                            <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
-                               class="text-xs bg-blue-900/30 text-blue-400 border border-blue-500/30 hover:bg-blue-600 hover:text-white px-3 py-1 rounded transition">
-                               ${link.title}
-                            </a>
+                        ${servers.map(srv => `
+                            <button onclick="changeServer('${srv.serverId}', this)" 
+                                    class="server-btn text-xs bg-[#21262d] text-gray-300 border border-[#30363d] hover:bg-gray-700 px-3 py-1.5 rounded transition">
+                                ${srv.title}
+                            </button>
                         `).join('')}
                     </div>
                 </div>`;
@@ -227,31 +203,99 @@
             container.innerHTML = html;
         }
 
+        // --- FUNGSI GANTI SERVER (Fetch URL Asli) ---
+        async function changeServer(serverId, btnElement) {
+            // Ubah tampilan tombol jadi loading/aktif
+            const allBtns = document.querySelectorAll('.server-btn');
+            allBtns.forEach(b => b.classList.remove('active', 'bg-blue-600', 'text-white'));
+            
+            btnElement.innerText = "Loading...";
+            btnElement.disabled = true;
+
+            try {
+                // Panggil API untuk decode serverId
+                // Endpoint umum: /otakudesu/server/{serverId}
+                const req = await fetch(`${API_BASE_URL}/otakudesu/server/${serverId}`);
+                const res = await req.json();
+                
+                // Biasanya URL ada di res.data.url atau res.url
+                const videoUrl = res.data?.url || res.url;
+
+                if (videoUrl) {
+                    document.getElementById('video-frame').src = videoUrl;
+                    
+                    // Update style tombol jadi sukses
+                    btnElement.innerText = "Playing";
+                    btnElement.classList.add('active');
+                    btnElement.disabled = false;
+                } else {
+                    alert("Gagal mendapatkan link video dari server ini.");
+                    btnElement.innerText = "Error";
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert("Gagal menghubungi server mirror.");
+                btnElement.innerText = "Failed";
+                btnElement.disabled = false;
+            }
+        }
+
+        function setupNavigation(data) {
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+
+            if (data.hasPrevEpisode && data.prevEpisode) {
+                btnPrev.href = `watch.html?id=${data.prevEpisode.episodeId}`;
+                btnPrev.classList.remove('bg-gray-700', 'text-gray-400', 'cursor-not-allowed', 'pointer-events-none');
+                btnPrev.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+            }
+
+            if (data.hasNextEpisode && data.nextEpisode) {
+                btnNext.href = `watch.html?id=${data.nextEpisode.episodeId}`;
+                btnNext.classList.remove('bg-gray-700', 'text-gray-400', 'cursor-not-allowed', 'pointer-events-none');
+                btnNext.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+            }
+        }
+
+        function renderDownloadList(qualityList) {
+            const container = document.getElementById('download-container');
+            if (qualityList.length === 0) return;
+
+            let html = '';
+            qualityList.forEach(quality => {
+                const resTitle = quality.title || 'Unknown';
+                const size = quality.size || '';
+                const urls = quality.urlList || [];
+
+                html += `
+                <div class="border-b border-[#30363d] pb-3 last:border-0 last:pb-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-gray-700 text-white text-xs font-bold px-2 py-1 rounded">${resTitle}</span>
+                        <span class="text-xs text-gray-500 font-mono">${size}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        ${urls.map(link => `
+                            <a href="${link.url}" target="_blank" class="text-xs bg-[#21262d] text-blue-400 border border-blue-900/30 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded transition">
+                               ${link.title}
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
         function setupEpisodeDropdown(list) {
             const select = document.getElementById('episode-select');
-            select.innerHTML = ''; // Clear loading
-
-            // JSON Otakudesu biasanya mengembalikan list dari episode terbaru ke terlama
-            // Kita masukkan semua ke dropdown
+            select.innerHTML = ''; 
             list.forEach(ep => {
                 const option = document.createElement('option');
                 option.value = ep.episodeId;
-                option.text = ep.title; // Misal: "Episode 12"
-                
-                // Tandai episode yang sedang aktif
-                if (ep.episodeId === episodeId) {
-                    option.selected = true;
-                }
-                
+                option.text = ep.title;
+                if (ep.episodeId === episodeId) option.selected = true;
                 select.appendChild(option);
             });
-        }
-
-        function showError(msg) {
-            const debug = document.getElementById('debug-area');
-            document.getElementById('loading').classList.add('hidden');
-            debug.classList.remove('hidden');
-            debug.innerText = "Error: " + msg;
         }
     </script>
 </body>
