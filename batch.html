@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Batch - NekoStream</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; font-family: sans-serif; }
+        .nav-link { color: #e5e7eb; font-size: 0.875rem; font-weight: 600; transition: color 0.2s; }
+        .nav-link:hover { color: #60a5fa; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col pb-20">
+
+    <header class="bg-[#161b22] border-b border-[#30363d] sticky top-0 z-50 p-4 shadow-lg">
+        <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <nav class="flex flex-wrap justify-center gap-6">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="ongoing.html" class="nav-link">On Going</a>
+                <a href="jadwal.html" class="nav-link">Jadwal Rilis</a>
+                <a href="list-anime.html" class="nav-link">List Anime</a>
+                <a href="genre.html" class="nav-link">List Genre</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-6 max-w-4xl">
+        
+        <div id="loading" class="text-center py-20">
+            <div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p class="text-gray-500 text-xs">Mengambil link batch...</p>
+        </div>
+
+        <div id="batch-content" class="hidden">
+            
+            <div class="bg-[#161b22] border border-[#30363d] rounded-lg p-6 shadow-lg">
+                <h1 id="batch-title" class="text-xl md:text-2xl font-bold text-white mb-6 text-center leading-tight">...</h1>
+                
+                <div class="mb-8 flex justify-center">
+                    <img id="batch-poster" src="" class="w-48 rounded shadow-lg border border-[#30363d] hidden object-cover">
+                </div>
+
+                <div class="space-y-6">
+                    <h3 class="text-lg font-bold text-gray-300 border-b border-[#30363d] pb-2">
+                        📥 Link Download
+                    </h3>
+                    
+                    <div id="download-list" class="grid gap-4">
+                        </div>
+                </div>
+
+                <div class="mt-8 text-center">
+                    <button onclick="history.back()" class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded text-sm font-bold transition border border-[#30363d]">
+                        Kembali
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Gunakan Config Global
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu/"; }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const batchId = urlParams.get('id');
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!batchId) {
+                alert("ID Batch tidak ditemukan.");
+                return;
+            }
+            fetchBatchData();
+        });
+
+        async function fetchBatchData() {
+            const loading = document.getElementById('loading');
+            const content = document.getElementById('batch-content');
+            
+            try {
+                // Endpoint: /otakudesu/batch/{batchId}
+                const endpoint = `${API_BASE_URL}/otakudesu/batch/${batchId}`;
+                
+                const req = await fetch(endpoint);
+                if (!req.ok) throw new Error("Gagal mengambil data batch.");
+                
+                const res = await req.json();
+                
+                // Ambil data (sesuaikan jika struktur JSON sedikit berbeda)
+                const data = res.data; 
+
+                if (!data) throw new Error("Data batch kosong.");
+
+                // 1. Render Judul & Poster
+                document.title = `Download ${data.title}`;
+                document.getElementById('batch-title').innerText = data.title;
+                
+                if(data.poster) {
+                    const img = document.getElementById('batch-poster');
+                    img.src = data.poster;
+                    img.classList.remove('hidden');
+                }
+
+                // 2. Render List Download
+                // Cek downloadUrl (standar API) atau downloadList
+                const downloads = data.downloadUrl || data.downloadList || [];
+                renderDownloadList(downloads);
+
+                loading.classList.add('hidden');
+                content.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                loading.innerHTML = `<div class="text-red-500 font-bold">Error: ${err.message}</div>`;
+            }
+        }
+
+        function renderDownloadList(downloadList) {
+            const container = document.getElementById('download-list');
+            
+            if (!downloadList || downloadList.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500">Link download belum tersedia.</p>';
+                return;
+            }
+
+            let html = '';
+
+            downloadList.forEach(quality => {
+                const resName = quality.title || 'Unknown Res'; // 360p / 480p / 720p
+                const size = quality.size || '?';
+                const urls = quality.urlList || []; 
+
+                html += `
+                <div class="bg-[#0d1117] border border-[#30363d] rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3 border-b border-[#30363d] pb-2">
+                        <span class="text-blue-400 font-bold text-lg">${resName}</span>
+                        <span class="text-gray-500 text-xs font-mono bg-gray-800 px-2 py-1 rounded">${size}</span>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        ${urls.map(link => `
+                            <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
+                               class="flex items-center gap-1 bg-blue-900/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600 hover:text-white px-3 py-2 rounded text-xs font-bold transition">
+                               <span>⬇</span> ${link.title}
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
+
