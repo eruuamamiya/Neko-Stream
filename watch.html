@@ -11,6 +11,7 @@
         .nav-link { color: #e5e7eb; font-size: 0.875rem; font-weight: 600; transition: color 0.2s; }
         .nav-link:hover { color: #60a5fa; }
         
+        /* Video Player Responsive 16:9 */
         .video-container {
             position: relative;
             padding-bottom: 56.25%; 
@@ -29,7 +30,7 @@
             border: 0;
         }
 
-        /* Style untuk tombol server aktif */
+        /* Style tombol server aktif */
         .server-btn.active {
             background-color: #2563eb; /* Blue 600 */
             color: white;
@@ -76,7 +77,7 @@
 
             <div class="flex flex-col md:flex-row gap-4 justify-between items-center mb-6 bg-[#161b22] p-4 rounded-lg border border-[#30363d]">
                 <div class="w-full md:w-auto">
-                    <label class="block text-xs text-gray-500 mb-1">Pilih Episode Lain:</label>
+                    <label class="block text-xs text-gray-500 mb-1">Ganti Episode:</label>
                     <select id="episode-select" class="w-full md:w-64 bg-[#0d1117] text-white text-sm border border-[#30363d] rounded p-2 focus:border-blue-500 focus:outline-none cursor-pointer">
                         <option value="#">Memuat list...</option>
                     </select>
@@ -105,7 +106,7 @@
     </main>
 
     <script>
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu"; }
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com"; }
 
         const urlParams = new URLSearchParams(window.location.search);
         const episodeId = urlParams.get('id');
@@ -118,7 +119,7 @@
             fetchEpisodeData();
         });
 
-        // Dropdown Ganti Episode
+        // Event Ganti Episode via Dropdown
         document.getElementById('episode-select').addEventListener('change', (e) => {
             const newId = e.target.value;
             if (newId && newId !== "#") window.location.href = `watch.html?id=${newId}`;
@@ -129,14 +130,17 @@
             const content = document.getElementById('watch-content');
             
             try {
+                // Fetch Data Episode Utama
                 const endpoint = `${API_BASE_URL}/otakudesu/episode/${episodeId}`;
                 const req = await fetch(endpoint);
                 const res = await req.json();
+                
+                // Root data ada di 'details' (Sesuai JSON Episode Kamu)
                 const data = res.data?.details;
 
                 if (!data) throw new Error("Data episode kosong.");
 
-                // 1. Info Utama
+                // 1. Info
                 document.title = data.title;
                 document.getElementById('ep-title').innerText = data.title;
 
@@ -146,16 +150,18 @@
                     iframe.src = data.defaultStreamingUrl;
                 }
 
-                // 3. Render Server List (FITUR BARU)
+                // 3. Render Server List (Mirror)
                 if (data.server && data.server.qualityList) {
                     renderServerList(data.server.qualityList);
                 }
 
                 // 4. Navigasi & Download
                 setupNavigation(data);
+                
                 if (data.download && data.download.qualityList) {
                     renderDownloadList(data.download.qualityList);
                 }
+                
                 if (data.info && data.info.episodeList) {
                     setupEpisodeDropdown(data.info.episodeList);
                 }
@@ -169,7 +175,7 @@
             }
         }
 
-        // --- FUNGSI RENDER LIST SERVER ---
+        // --- RENDER DAFTAR TOMBOL SERVER ---
         function renderServerList(qualityList) {
             const container = document.getElementById('server-list');
             const wrapper = document.getElementById('server-container');
@@ -180,7 +186,6 @@
             let html = '';
 
             qualityList.forEach(quality => {
-                // quality.title = "Mirror 360p"
                 const resName = quality.title.replace('Mirror', '').trim(); 
                 const servers = quality.serverList || [];
 
@@ -203,44 +208,58 @@
             container.innerHTML = html;
         }
 
-        // --- FUNGSI GANTI SERVER (Fetch URL Asli) ---
+        // --- FUNGSI GANTI SERVER (FIXED LOGIC) ---
         async function changeServer(serverId, btnElement) {
-            // Ubah tampilan tombol jadi loading/aktif
+            // Reset style tombol lain
             const allBtns = document.querySelectorAll('.server-btn');
             allBtns.forEach(b => b.classList.remove('active', 'bg-blue-600', 'text-white'));
             
-            btnElement.innerText = "Loading...";
+            // Ubah text tombol jadi loading
+            const originalText = btnElement.innerText;
+            btnElement.innerText = "...";
             btnElement.disabled = true;
 
             try {
-                // Panggil API untuk decode serverId
-                // Endpoint umum: /otakudesu/server/{serverId}
+                // Panggil Endpoint Server
                 const req = await fetch(`${API_BASE_URL}/otakudesu/server/${serverId}`);
                 const res = await req.json();
                 
-                // Biasanya URL ada di res.data.url atau res.url
-                const videoUrl = res.data?.url || res.url;
+                // --- LOGIC PENCARIAN URL (SUDAH DIPERBAIKI) ---
+                // Sesuai JSON kamu: data.details.url
+                
+                let videoUrl = null;
+
+                // 1. Cek struktur yang kamu kirim barusan (PRIORITAS UTAMA)
+                if (res.data && res.data.details && res.data.details.url) {
+                    videoUrl = res.data.details.url;
+                }
+                // 2. Fallback (Jaga-jaga)
+                else if (res.data && res.data.url) videoUrl = res.data.url;
+                else if (res.url) videoUrl = res.url;
 
                 if (videoUrl) {
                     document.getElementById('video-frame').src = videoUrl;
                     
-                    // Update style tombol jadi sukses
-                    btnElement.innerText = "Playing";
-                    btnElement.classList.add('active');
+                    // Sukses
+                    btnElement.innerText = originalText;
+                    btnElement.classList.add('active', 'bg-blue-600', 'text-white');
                     btnElement.disabled = false;
                 } else {
-                    alert("Gagal mendapatkan link video dari server ini.");
+                    console.log("Struktur JSON tidak dikenali:", res);
+                    alert("Gagal memuat link video. Struktur JSON berubah.");
                     btnElement.innerText = "Error";
+                    btnElement.disabled = false;
                 }
 
             } catch (err) {
                 console.error(err);
-                alert("Gagal menghubungi server mirror.");
-                btnElement.innerText = "Failed";
+                alert("Gagal menghubungi server.");
+                btnElement.innerText = "Error";
                 btnElement.disabled = false;
             }
         }
 
+        // --- NAVIGASI PREV/NEXT ---
         function setupNavigation(data) {
             const btnPrev = document.getElementById('btn-prev');
             const btnNext = document.getElementById('btn-next');
@@ -258,9 +277,10 @@
             }
         }
 
+        // --- DOWNLOAD LIST ---
         function renderDownloadList(qualityList) {
             const container = document.getElementById('download-container');
-            if (qualityList.length === 0) return;
+            if (!qualityList || qualityList.length === 0) return;
 
             let html = '';
             qualityList.forEach(quality => {
@@ -286,6 +306,7 @@
             container.innerHTML = html;
         }
 
+        // --- DROPDOWN EPISODE ---
         function setupEpisodeDropdown(list) {
             const select = document.getElementById('episode-select');
             select.innerHTML = ''; 
