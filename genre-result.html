@@ -62,7 +62,7 @@
     </main>
 
     <script>
-        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "http://localhost:3000"; }
+        if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu/genre"; }
         
         // Ambil ID Genre dari URL (contoh: genre-result.html?id=isekai)
         const urlParams = new URLSearchParams(window.location.search);
@@ -108,7 +108,7 @@
 
             try {
                 // Fetch API: /api/genres/isekai?p=1
-                const req = await fetch(`${API_BASE_URL}/genres/${genreId}?p=${page}`);
+                const req = await fetch(`${API_BASE_URL}/genre/${genreId}?page=${page}`);
                 if(!req.ok) throw new Error("Gagal fetch data");
                 
                 const res = await req.json();
@@ -189,3 +189,4 @@
     </script>
 </body>
 </html>
+
