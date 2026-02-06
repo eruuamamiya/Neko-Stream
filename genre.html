@@ -4,14 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Genre - NekoStream</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="config.js"></script>
-
+    <link rel="stylesheet" href="style.css"> 
     <style>
-        body { background-color: #0d1117; color: #c9d1d9; }
-        
+        const currentLocation = location.href;
+        const menuItem = document.querySelectorAll('.nav-link');
+        const menuLength = menuItem.length;
+        for (let i = 0; i < menuLength; i++) {
+            if (menuItem[i].href === currentLocation) {
+                menuItem[i].className += " active";
+            }
+            }
         /* Efek Hover Card */
         .genre-card { transition: all 0.2s ease; }
         .genre-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
@@ -146,5 +150,6 @@
 </body>
 
 </html>
+
 
 
