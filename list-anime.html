@@ -6,15 +6,8 @@
     <title>List Anime - NekoStream</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="config.js"></script>
-
-    <style>
-        body { background-color: #0d1117; color: #c9d1d9; }
-        html { scroll-behavior: smooth; }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0d1117; }
-        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
-    </style>
+    <link rel="stylesheet" href="style.css"> 
+    
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col">
 
@@ -55,6 +48,14 @@
     <button onclick="window.scrollTo(0,0)" class="fixed bottom-6 right-6 bg-blue-600 p-3 rounded-full text-white shadow-lg hover:bg-blue-700 opacity-80 hover:opacity-100 transition">↑</button>
 
     <script>
+        const currentLocation = location.href;
+        const menuItem = document.querySelectorAll('.nav-link');
+        const menuLength = menuItem.length;
+        for (let i = 0; i < menuLength; i++) {
+            if (menuItem[i].href === currentLocation) {
+                menuItem[i].className += " active";
+            }
+        }
         // Config Default
         if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com/otakudesu/anime"; }
 
@@ -175,5 +176,6 @@
     </script>
 </body>
 </html>
+
 
 
