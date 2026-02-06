@@ -1,0 +1,47 @@
+/* style.css */
+body { 
+    background-color: #0d1117; 
+    color: #e0e0e0; 
+    font-family: sans-serif; 
+    margin: 0;
+}
+
+/* Navbar Container */
+nav {
+    background-color: #161b22; /* Warna latar Navbar */
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify_content: space-between;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    position: sticky; /* Agar nempel di atas */
+    top: 0;
+    z-index: 50;
+}
+
+/* Judul / Logo */
+.nav-brand {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: white;
+    text-decoration: none;
+}
+.nav-brand span { color: #3b82f6; } /* Warna Biru untuk "Stream" */
+
+/* Link Menu */
+.nav-menu {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-link {
+    color: #e5e7eb; /* Gray-200 */
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 600; /* font-semibold */
+    text-decoration: none; /* Hilangkan garis bawah */
+    transition: color 0.2s;
+}
+
+.nav-link:hover { color: #60a5fa; } /* Blue-400 */
+.nav-link.active { color: #3b82f6; font-weight: bold; } /* Blue-500 */
+
