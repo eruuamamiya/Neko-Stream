@@ -31,7 +31,7 @@ nav {
 /* Link Menu */
 .nav-menu {
     display: flex;
-    gap: 20px;
+    gap: 10px;
 }
 
 .nav-link {
@@ -42,6 +42,6 @@ nav {
     transition: color 0.2s;
 }
 
-.nav-link:hover { color: #60a5fa; } /* Blue-400 */
+.nav-link:hover { color: #60a5fa"> ; } /* Blue-400 */
 .nav-link.active { color: #3b82f6; font-weight: bold; } /* Blue-500 */
 
