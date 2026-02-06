@@ -7,17 +7,6 @@ body {
 }
 
 /* Navbar Container */
-nav {
-    background-color: #161b22; /* Warna latar Navbar */
-    padding: 15px 20px;
-    display: flex;
-    align-items: center;
-    justify_content: space-between;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-    position: sticky; /* Agar nempel di atas */
-    top: 0;
-    z-index: 50;
-}
 
 /* Judul / Logo */
 .nav-brand {
