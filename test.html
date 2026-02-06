@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On Going Anime - STB (Debug Mode)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; }
+        .anime-card img { transition: transform 0.3s ease; }
+        .anime-card:hover img { transform: scale(1.1); }
+        .anime-card:hover .play-overlay { opacity: 1; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+    <header class="bg-[#161b22] border-b border-[#30363d] sticky top-0 z-50 p-4 shadow-lg">
+        <div class="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <nav class="flex flex-wrap justify-center gap-6">
+                <a href="index.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-home">Home</a>
+                <a href="ongoing.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-ongoing">On Going</a>
+                <a href="jadwal.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-jadwal">Jadwal Rilis</a>
+                <a href="list-anime.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-list">List Anime</a>
+                <a href="genre.html" class="nav-link text-[#e5e7eb] text-sm font-semibold hover:text-blue-400 transition" id="nav-genre">List Genre</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8 pb-20">
+        
+        <div class="flex items-center justify-between mb-6 border-b border-[#30363d] pb-4">
+            <h1 class="text-2xl font-bold text-white flex items-center gap-2">🔥 Anime Sedang Tayang</h1>
+            <span class="text-xs text-gray-500 bg-[#161b22] px-3 py-1 rounded border border-[#30363d]" id="page-indicator">Page 1</span>
+        </div>
+
+        <div id="debug-info" class="mb-4 p-2 bg-gray-800 text-xs text-yellow-400 font-mono border border-yellow-600 rounded">
+            Sedang cek config...
+        </div>
+
+        <div id="loading" class="text-center py-20">
+            <div class="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p class="text-gray-500 text-sm">Memuat data...</p>
+        </div>
+
+        <div id="error-box" class="hidden bg-red-900/50 border border-red-500 text-white p-4 rounded mb-6 text-center"></div>
+
+        <div id="anime-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 hidden"></div>
+
+        <div id="pagination" class="hidden flex justify-center items-center gap-4 mt-10 pt-6 border-t border-[#30363d]">
+            <button id="btn-prev" class="px-4 py-2 bg-[#21262d] border border-[#30363d] rounded text-sm text-gray-400 hover:text-white disabled:opacity-50">← Prev</button>
+            <span class="text-sm font-bold text-white">Page <span id="current-page-num">1</span> / <span id="total-page-num">?</span></span>
+            <button id="btn-next" class="px-4 py-2 bg-[#21262d] border border-[#30363d] rounded text-sm text-gray-400 hover:text-white disabled:opacity-50">Next →</button>
+        </div>
+
+    </main>
+
+    <script>
+        // --- 1. CEK VARIABEL GLOBAL ---
+        if (typeof API_BASE_URL === 'undefined') { 
+            var API_BASE_URL = "https://api.nekostream.online"; 
+            document.getElementById('debug-info').innerText = "⚠️ Config.js tidak terbaca! Menggunakan Localhost.";
+        } else {
+            // Tampilkan URL yang sedang dipakai di layar (PENTING BUAT CEK)
+            document.getElementById('debug-info').innerText = "🔗 Menggunakan API: " + API_BASE_URL;
+        }
+        
+        let currentPage = 1;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Highlight Nav
+            const navItem = document.getElementById('nav-ongoing');
+            if(navItem) {
+                navItem.classList.add('text-blue-500', 'border-b-2', 'border-blue-500');
+                navItem.classList.remove('text-[#e5e7eb]');
+            }
+
+            fetchOngoing(1);
+
+            document.getElementById('btn-prev').addEventListener('click', () => { if(currentPage > 1) fetchOngoing(currentPage - 1); });
+            document.getElementById('btn-next').addEventListener('click', () => { fetchOngoing(currentPage + 1); });
+        });
+
+        async function fetchOngoing(page) {
+            const loading = document.getElementById('loading');
+            const grid = document.getElementById('anime-grid');
+            const paginationDiv = document.getElementById('pagination');
+            const errorBox = document.getElementById('error-box');
+
+            // Reset UI
+            loading.classList.remove('hidden');
+            grid.classList.add('hidden');
+            paginationDiv.classList.add('hidden');
+            errorBox.classList.add('hidden');
+            window.scrollTo(0,0);
+
+            try {
+                // Tampilkan URL lengkap yang ditembak di console debug layar
+                const targetURL = `${API_BASE_URL}/otakudesu/ongoing?page=${page}`;
+                document.getElementById('debug-info').innerText += `\n🚀 Requesting: ${targetURL}`;
+
+                const req = await fetch(targetURL);
+                
+                if(!req.ok) {
+                    throw new Error(`Server Balas Error: ${req.status} ${req.statusText}`);
+                }
+                
+                const res = await req.json();
+                
+                // Debugging: Tampilkan isi JSON di console browser
+                console.log("JSON Diterima:", res);
+
+                const animeList = res.data?.animeList || [];
+                const meta = res.data?.pagination || res.pagination || {}; // Handle beda struktur
+
+                if(animeList.length === 0) {
+                    throw new Error("Data Anime Kosong (Array Length 0). Cek Server.");
+                }
+
+                renderCards(animeList);
+                updatePagination(meta, page);
+
+                loading.classList.add('hidden');
+                grid.classList.remove('hidden');
+                paginationDiv.classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                loading.classList.add('hidden');
+                errorBox.classList.remove('hidden');
+                errorBox.innerHTML = `
+                    <p class="font-bold text-lg">Gagal Memuat Data 😭</p>
+                    <p class="text-sm mt-2">${err.message}</p>
+                    <p class="text-xs mt-2 text-yellow-300">URL: ${API_BASE_URL}</p>
+                    <button onclick="location.reload()" class="mt-4 bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded">Coba Lagi</button>
+                `;
+            }
+        }
+
+        function renderCards(list) {
+            const grid = document.getElementById('anime-grid');
+            let html = '';
+
+            list.forEach(anime => {
+                html += `
+                <a href="detail.html?id=${anime.animeId}" class="anime-card group relative block bg-[#161b22] rounded-lg overflow-hidden border border-[#30363d] hover:border-blue-500 transition-all">
+                    <div class="relative aspect-[3/4] overflow-hidden">
+                        <img src="${anime.poster}" alt="${anime.title}" class="w-full h-full object-cover" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-transparent to-transparent opacity-80"></div>
+                        <div class="absolute top-2 left-2 flex flex-col gap-1">
+                             <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">${anime.releaseDay}</span>
+                        </div>
+                        <div class="absolute top-2 right-2 bg-black/80 text-white text-[10px] px-1.5 py-0.5 rounded border border-gray-600">Ep ${anime.episodes}</div>
+                    </div>
+                    <div class="p-3">
+                        <h3 class="text-[13px] font-bold text-gray-200 leading-snug line-clamp-2 h-[2.5em]">${anime.title}</h3>
+                        <div class="flex justify-between items-center mt-2 text-[11px] text-gray-500">
+                            <span>${anime.latestReleaseDate}</span>
+                            <span class="text-blue-400/80">Ongoing</span>
+                        </div>
+                    </div>
+                </a>`;
+            });
+            grid.innerHTML = html;
+        }
+
+        function updatePagination(meta, page) {
+            currentPage = page;
+            document.getElementById('current-page-num').innerText = currentPage;
+            document.getElementById('total-page-num').innerText = meta.totalPages || '?';
+            document.getElementById('page-indicator').innerText = `Page ${currentPage}`;
+            
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            
+            // Safety check untuk pagination
+            if(meta.hasPrevPage !== undefined) {
+                btnPrev.disabled = !meta.hasPrevPage;
+                btnNext.disabled = !meta.hasNextPage;
+            } else {
+                btnPrev.disabled = (currentPage === 1);
+                btnNext.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
