@@ -6,24 +6,7 @@
     <title>NekoStream</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="config.js"></script>
-
-    <style>
-        body { background-color: #0d1117; color: #e0e0e0; font-family: sans-serif; }
-        
-        /* Font & Shadow untuk Card */
-        .card-font { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .text-shadow { text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
-
-        /* Style Navigasi Asli (Request Awal) */
-        .nav-link {
-            color: #e5e7eb; /* Gray-200 */
-            font-size: 0.875rem; /* text-sm */
-            font-weight: 600; /* font-semibold */
-            transition: color 0.2s;
-        }
-        .nav-link:hover { color: #60a5fa; } /* Blue-400 */
-        .nav-link.active { color: #3b82f6; font-weight: bold; } /* Blue-500 */
-    </style>
+    
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col pb-20">
 
@@ -71,6 +54,16 @@
     </main>
 
     <script>
+        
+        const currentLocation = location.href;
+        const menuItem = document.querySelectorAll('.nav-link');
+        const menuLength = menuItem.length;
+        for (let i = 0; i < menuLength; i++) {
+            if (menuItem[i].href === currentLocation) {
+                menuItem[i].className += " active";
+            }
+        }
+        
         if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://style-demonstrated-nutten-mark.trycloudflare.com/otakudesu/home"; }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -158,6 +151,7 @@
 </body>
 
 </html>
+
 
 
 
