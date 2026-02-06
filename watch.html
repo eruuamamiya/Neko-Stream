@@ -8,6 +8,31 @@
     <script src="config.js"></script>
     <link rel="stylesheet" href="style.css"> 
     <style>
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; 
+            height: 0;
+            overflow: hidden;
+            background: #000;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        /* Style tombol server aktif */
+        .server-btn.active {
+            background-color: #2563eb; /* Blue 600 */
+            color: white;
+            border-color: #3b82f6;
+        }
+        
         const currentLocation = location.href;
         const menuItem = document.querySelectorAll('.nav-link');
         const menuLength = menuItem.length;
