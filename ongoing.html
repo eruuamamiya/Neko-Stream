@@ -4,19 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>On Going Anime - NekoStream</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="config.js"></script>
-
-    <style>
-        body { background-color: #0d1117; color: #c9d1d9; }
-        
-        /* Transisi Gambar */
-        .anime-card img { transition: transform 0.3s ease; }
-        .anime-card:hover img { transform: scale(1.1); }
-        .anime-card:hover .play-overlay { opacity: 1; }
-    </style>
+    <link rel="stylesheet" href="style.css"> 
+    
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col">
 
@@ -70,6 +61,14 @@
     </main>
 
     <script>
+        const currentLocation = location.href;
+        const menuItem = document.querySelectorAll('.nav-link');
+        const menuLength = menuItem.length;
+        for (let i = 0; i < menuLength; i++) {
+            if (menuItem[i].href === currentLocation) {
+                menuItem[i].className += " active";
+            }
+        }
         // Config Default
         if (typeof API_BASE_URL === 'undefined') { var API_BASE_URL = "https://reduced-confidence-muscle-baseline.trycloudflare.com/otakudesu/ongoing"; }
         
@@ -202,5 +201,6 @@
 </body>
 
 </html>
+
 
 
