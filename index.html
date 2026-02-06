@@ -81,7 +81,7 @@
             const secCompleted = document.getElementById('sec-completed');
 
             try {
-                const req = await fetch(`${API_BASE_URL}/otakudesu/home`);
+                const req = await fetch(`${API_BASE_URL}/home`);
                 if (!req.ok) throw new Error("Server Error");
                 const json = await req.json();
 
@@ -152,6 +152,7 @@
 </body>
 
 </html>
+
 
 
 
